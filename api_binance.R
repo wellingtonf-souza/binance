@@ -74,79 +74,55 @@ send_public_request = function(url_path, payload = NULL, simplify = TRUE){
 get_exchangeInfo = function(){
   response = send_public_request('/api/v3/exchangeInfo')
   filters = response$symbols$filters
+  names(filters) = response$symbols$symbol
+  filters = bind_rows(filters, .id = "symbol")
   response$symbols = response$symbols %>% select(-filters)
   
   response$PRICE_FILTER = filters %>% 
-    map_df(~.x %>% 
-             filter(filterType == 'PRICE_FILTER') %>% 
-             select(filterType, minPrice, maxPrice, tickSize)
-    ) %>% 
-    mutate_at(vars(-contains('filterType')),as.numeric) %>% 
-    mutate(symbol = response$symbols$symbol)
+    filter(filterType == 'PRICE_FILTER') %>% 
+    select(symbol, filterType, minPrice, maxPrice, tickSize) %>% 
+    mutate_at(vars(-filterType,-symbol),as.numeric)
   
   response$PERCENT_PRICE = filters %>% 
-    map_df(~.x %>% 
-             filter(filterType == 'PERCENT_PRICE') %>% 
-             select(filterType, multiplierUp, multiplierDown, avgPriceMins)
-    ) %>% 
-    mutate_at(vars(-contains('filterType')),as.numeric) %>% 
-    mutate(symbol = response$symbols$symbol)
+    filter(filterType == 'PERCENT_PRICE') %>% 
+    select(symbol, filterType, multiplierUp, multiplierDown, avgPriceMins) %>% 
+    mutate_at(vars(-filterType,-symbol),as.numeric)
   
   response$LOT_SIZE = filters %>% 
-    map_df(~.x %>% 
-             filter(filterType == 'LOT_SIZE') %>% 
-             select(filterType, minQty, maxQty, stepSize)
-    ) %>% 
-    mutate_at(vars(-contains('filterType')),as.numeric) %>% 
-    mutate(symbol = response$symbols$symbol)
+    filter(filterType == 'LOT_SIZE') %>% 
+    select(symbol, filterType, minQty, maxQty, stepSize) %>% 
+    mutate_at(vars(-filterType,-symbol),as.numeric)
   
   
   response$MIN_NOTIONAL = filters %>% 
-    map_df(~.x %>% 
-             filter(filterType == 'MIN_NOTIONAL') %>% 
-             select(filterType, minNotional, applyToMarket, avgPriceMins)
-    ) %>% 
+    filter(filterType == 'MIN_NOTIONAL') %>% 
+    select(symbol, filterType, minNotional, applyToMarket, avgPriceMins)%>% 
     mutate(
       minNotional = as.numeric(minNotional),
-      avgPriceMins = as.numeric(avgPriceMins),
-      symbol = response$symbols$symbol
+      avgPriceMins = as.numeric(avgPriceMins)
     )
   
   response$ICEBERG_PARTS = filters %>% 
-    map_df(~.x %>% 
-             filter(filterType == 'ICEBERG_PARTS') %>% 
-             select(filterType, limit)
-    ) %>% 
-    mutate(
-      limit = as.numeric(limit),
-      symbol = response$symbols$symbol
-    )
+    filter(filterType == 'ICEBERG_PARTS') %>% 
+    select(symbol, filterType, limit) %>% 
+    mutate(limit = as.numeric(limit))
   
   response$MARKET_LOT_SIZE = filters %>% 
-    map_df(~.x %>% 
-             filter(filterType == 'MARKET_LOT_SIZE') %>% 
-             select(filterType, minQty, maxQty, stepSize)
-    ) %>% 
-    mutate_at(vars(-contains('filterType')),as.numeric) %>% 
-    mutate(symbol = response$symbols$symbol)
+    filter(filterType == 'MARKET_LOT_SIZE') %>% 
+    select(symbol, filterType, minQty, maxQty, stepSize) %>% 
+    mutate_at(vars(-filterType,-symbol),as.numeric)
   
   
   response$MAX_NUM_ORDERS = filters %>% 
-    map_df(~.x %>% 
-             filter(filterType == 'MAX_NUM_ORDERS') %>% 
-             select(filterType, maxNumOrders)
-    ) %>% 
-    mutate_at(vars(-contains('filterType')),as.numeric) %>% 
-    mutate(symbol = response$symbols$symbol)
+    filter(filterType == 'MAX_NUM_ORDERS') %>% 
+    select(symbol, filterType, maxNumOrders) %>% 
+    mutate(maxNumOrders = as.numeric(maxNumOrders))
   
   
   response$MAX_NUM_ALGO_ORDERS = filters %>% 
-    map_df(~.x %>% 
-             filter(filterType == 'MAX_NUM_ALGO_ORDERS') %>% 
-             select(filterType, maxNumAlgoOrders)
-    ) %>% 
-    mutate_at(vars(-contains('filterType')),as.numeric) %>% 
-    mutate(symbol = response$symbols$symbol)
+    filter(filterType == 'MAX_NUM_ALGO_ORDERS') %>% 
+    select(symbol, filterType, maxNumAlgoOrders) %>% 
+    mutate(maxNumAlgoOrders = as.numeric(maxNumAlgoOrders))
   
   return(response)
 }
